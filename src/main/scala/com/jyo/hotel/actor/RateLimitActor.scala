@@ -1,11 +1,11 @@
-package com.test.hotel.actor
+package com.jyo.hotel.actor
 
 import akka.actor.{ Actor, ActorRef, Props }
 import akka.event.Logging
 import akka.routing.ConsistentHashingRouter.ConsistentHashable
-import com.test.hotel.actor.HotelRegistryActor.SendHotelData
-import com.test.hotel.actor.RateLimitActor.{ CollectTick, GetHotels, RemoveSuspended }
-import com.test.hotel.models.CityQuery
+import com.jyo.hotel.actor.HotelRegistryActor.SendHotelData
+import com.jyo.hotel.actor.RateLimitActor.{ CollectTick, GetHotels, RemoveSuspended }
+import com.jyo.hotel.models.CityQuery
 import com.typesafe.config.ConfigFactory
 
 import scala.collection.mutable

@@ -7,10 +7,10 @@ package com.example.actor
 //#plain-spec
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestActors, TestKit, TestProbe}
-import com.test.hotel.actor.HotelRegistryActor.SendHotelData
-import com.test.hotel.actor.RateLimitActor
-import com.test.hotel.actor.RateLimitActor.GetHotels
-import com.test.hotel.models.CityQuery
+import com.jyo.hotel.actor.HotelRegistryActor.SendHotelData
+import com.jyo.hotel.actor.RateLimitActor
+import com.jyo.hotel.actor.RateLimitActor.GetHotels
+import com.jyo.hotel.models.CityQuery
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 //#implicit-sender
@@ -27,7 +27,7 @@ class RateLimitActorSpec extends TestKit(ActorSystem("MySpec")) with ImplicitSen
     "forward request to hotelRegistryActor if rateLimit is not exceeded" in {
       val testProbe = TestProbe()
       val rateLimitActor = system.actorOf(RateLimitActor.props(testProbe.ref))
-      val cityQuery = CityQuery("Bangkok","1",true)
+      val cityQuery = CityQuery("Bangkok","1", None)
       rateLimitActor ! GetHotels(cityQuery)
       testProbe.expectMsg(SendHotelData(cityQuery, self))
     }
@@ -35,7 +35,7 @@ class RateLimitActorSpec extends TestKit(ActorSystem("MySpec")) with ImplicitSen
     "reply as None if rateLimit exceeds for the request" in {
       val testProbe = TestProbe()
       val rateLimitActor = system.actorOf(RateLimitActor.props(testProbe.ref))
-      val cityQuery = CityQuery("Bangkok","1",true)
+      val cityQuery = CityQuery("Bangkok","1",None)
       rateLimitActor ! GetHotels(cityQuery)
       rateLimitActor ! GetHotels(cityQuery)
       rateLimitActor ! GetHotels(cityQuery)
@@ -53,7 +53,7 @@ class RateLimitActorSpec extends TestKit(ActorSystem("MySpec")) with ImplicitSen
     "receive tick collect message after sending a request" in {
       val testProbe = TestProbe()
       val rateLimitActor = system.actorOf(RateLimitActor.props(testProbe.ref))
-      val cityQuery = CityQuery("Bangkok","1",true)
+      val cityQuery = CityQuery("Bangkok","1",None)
       rateLimitActor ! GetHotels(cityQuery)
 
     }

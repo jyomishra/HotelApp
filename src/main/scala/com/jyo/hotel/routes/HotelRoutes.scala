@@ -1,20 +1,20 @@
-package com.test.hotel.routes
+package com.jyo.hotel.routes
 
 import akka.actor.{ ActorRef, ActorSystem }
+import akka.pattern.ask
 import akka.event.Logging
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Directives.{ as, concat, entity, onSuccess, pathEnd, pathPrefix }
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.MethodDirectives.post
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
-import akka.pattern.ask
 import akka.util.Timeout
-import com.test.hotel.actor.RateLimitActor.GetHotels
-import com.test.hotel.models.{ CityQuery, Hotels }
-import com.test.hotel.serialization.HotelJsonSupport
+import com.jyo.hotel.actor.RateLimitActor.GetHotels
+import com.jyo.hotel.models.{ CityQuery, HotelResponse, Hotels }
+import com.jyo.hotel.serialization.HotelJsonSupport
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
+import scala.concurrent.duration.DurationDouble
 
 trait HotelRoutes extends HotelJsonSupport {
 
@@ -40,6 +40,9 @@ trait HotelRoutes extends HotelJsonSupport {
                 {
                   if (city.apiKey.isEmpty || city.cityName.isEmpty) {
                     complete((StatusCodes.BadRequest, "Required Parameter Missing"))
+                  } else if (city.sort.isDefined && !(city.sort.get.equalsIgnoreCase("asc")
+                    || city.sort.get.equalsIgnoreCase("desc"))) {
+                    complete((StatusCodes.BadRequest, "Sort can be empty, Asc(ascending) or Desc(descending)."))
                   } else {
                     val hotelFetched: Future[Option[Hotels]] =
                       (rateLimitActorRef ? GetHotels(city)).mapTo[Option[Hotels]]
@@ -47,7 +50,8 @@ trait HotelRoutes extends HotelJsonSupport {
                       case None => complete(StatusCodes.TooManyRequests)
                       case Some(hotels) => {
                         log.info("Fetched hotels with size : {}", hotels.hotels.size)
-                        complete((StatusCodes.OK, hotels))
+                        if (hotels.hotels.isEmpty) complete((StatusCodes.OK, HotelResponse("No hotel found for city : " + city.cityName, hotels.hotels)))
+                        else complete((StatusCodes.OK, HotelResponse("Ok", hotels.hotels)))
                       }
                     }
                   }

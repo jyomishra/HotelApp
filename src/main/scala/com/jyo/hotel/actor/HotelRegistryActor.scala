@@ -1,10 +1,10 @@
-package com.test.hotel.actor
+package com.jyo.hotel.actor
 
 import java.nio.charset.{ Charset, CodingErrorAction }
 
 import akka.actor.{ Actor, ActorRef, Props }
 import akka.event.Logging
-import com.test.hotel.models.{ CityQuery, Hotel, HotelObj, Hotels }
+import com.jyo.hotel.models.{ CityQuery, Hotel, HotelObj, Hotels }
 import com.typesafe.config.ConfigFactory
 
 import scala.io.Source
@@ -17,7 +17,7 @@ object HotelRegistryActor {
 class HotelRegistryActor extends Actor {
   lazy val log = Logging(context.system, classOf[HotelRegistryActor])
 
-  import com.test.hotel.actor.HotelRegistryActor._
+  import com.jyo.hotel.actor.HotelRegistryActor._
   private val charsetDecoder = Charset.forName("UTF-8").newDecoder
   charsetDecoder.onMalformedInput(CodingErrorAction.IGNORE)
   private val config = ConfigFactory.load()
@@ -29,7 +29,7 @@ class HotelRegistryActor extends Actor {
   def receive: Receive = {
     case SendHotelData(cityQuery, actorRef) => {
       val searchedHotels = hotels.filter(_.city.equalsIgnoreCase(cityQuery.cityName))
-      if (cityQuery.sort.isEmpty)
+      if (cityQuery.sort.isEmpty || cityQuery.sort.get.isEmpty)
         actorRef ! Some(Hotels(searchedHotels))
       else if (cityQuery.sort.get.equalsIgnoreCase("Asc"))
         actorRef ! Some(Hotels(searchedHotels.sortBy(_.price)))

@@ -1,11 +1,11 @@
-package com.test.hotel
+package com.jyo.hotel
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.routing.{ ConsistentHashingPool, SmallestMailboxPool }
 import akka.stream.ActorMaterializer
-import com.test.hotel.actor.{ HotelRegistryActor, RateLimitActor }
-import com.test.hotel.routes.HotelRoutes
+import com.jyo.hotel.actor.{ HotelRegistryActor, RateLimitActor }
+import com.jyo.hotel.routes.HotelRoutes
 import com.typesafe.config.ConfigFactory
 
 object ServerMain extends App with HotelRoutes {

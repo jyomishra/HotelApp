@@ -1,9 +1,7 @@
-package com.test.hotel.serialization
+package com.jyo.hotel.serialization
 
-import com.test.hotel.models.{ CityQuery, Hotel, Hotels }
-
-//#json-support
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import com.jyo.hotel.models.{ CityQuery, Hotel, HotelResponse, Hotels }
 import spray.json.DefaultJsonProtocol
 
 trait HotelJsonSupport extends SprayJsonSupport {
@@ -13,5 +11,5 @@ trait HotelJsonSupport extends SprayJsonSupport {
   implicit val hotelJsonFormat = jsonFormat4(Hotel)
   implicit val hotelsJsonFormat = jsonFormat1(Hotels)
   implicit val cityJsonFormat = jsonFormat3(CityQuery)
+  implicit val hotelResponseJson = jsonFormat2(HotelResponse)
 }
-//#json-support
