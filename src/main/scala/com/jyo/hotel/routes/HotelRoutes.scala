@@ -42,7 +42,7 @@ trait HotelRoutes extends HotelJsonSupport {
                     complete((StatusCodes.BadRequest, "Required Parameter Missing"))
                   } else if (city.sort.isDefined && !(city.sort.get.equalsIgnoreCase("asc")
                     || city.sort.get.equalsIgnoreCase("desc"))) {
-                    complete((StatusCodes.BadRequest, "Sort can be empty, Asc(ascending) or Desc(descending)."))
+                    complete((StatusCodes.BadRequest, "Sort can be Asc(ascending) or Desc(descending)."))
                   } else {
                     val hotelFetched: Future[Option[Hotels]] =
                       (rateLimitActorRef ? GetHotels(city)).mapTo[Option[Hotels]]

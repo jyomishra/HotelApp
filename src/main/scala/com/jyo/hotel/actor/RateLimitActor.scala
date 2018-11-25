@@ -20,24 +20,34 @@ object RateLimitActor {
   case class RemoveSuspended(apiKey: String)
   def props(hotelRegistryActorRef: ActorRef) = Props(new RateLimitActor(hotelRegistryActorRef))
 }
-
+/*
+  Rate Limit actor implements rate limit via sliding window of 10 sec
+ */
 class RateLimitActor(hotelRegistryActorRef: ActorRef) extends Actor {
 
   lazy val log = Logging(context.system, classOf[RateLimitActor])
 
   private val config = ConfigFactory.load()
+  // sliding window of size 10
   private var queryCountWindowMap = mutable.Map[String, List[Int]]()
+  // store count of request in last 1 second
   private var queryCountTickMap = mutable.Map[String, Int]()
   private var suspendedKeysList = List[String]()
   implicit val ec = Implicits.global
 
   override def receive = {
     case GetHotels(cityQuery) => {
+
+      // sliding window implementation for rate limit
       log.debug("request received for api key : " + cityQuery.apiKey + " at actor " + self)
       val rateLimit = getRateLimitForApiKey(cityQuery)
+
+      // checks the apiKey in suspended keys list
       if (suspendedKeysList.contains(cityQuery.apiKey)) {
         sender() ! None
       } else {
+        // if window map contains the key then
+        // check all request count in last 10 sec
         if (queryCountWindowMap.contains(cityQuery.apiKey)) {
           if (queryCountWindowMap(cityQuery.apiKey).sum >= rateLimit || queryCountTickMap(cityQuery.apiKey) >= rateLimit
             || queryCountWindowMap(cityQuery.apiKey).sum + queryCountTickMap(cityQuery.apiKey) >= rateLimit) {
@@ -46,6 +56,7 @@ class RateLimitActor(hotelRegistryActorRef: ActorRef) extends Actor {
             context.system.scheduler.scheduleOnce(5 minute, self, RemoveSuspended(cityQuery.apiKey))
             sender() ! None
           } else {
+            // if rate is under limit then
             queryCountTickMap(cityQuery.apiKey) = queryCountTickMap(cityQuery.apiKey) + 1
             hotelRegistryActorRef ! SendHotelData(cityQuery, sender())
           }
@@ -61,13 +72,16 @@ class RateLimitActor(hotelRegistryActorRef: ActorRef) extends Actor {
         }
       }
     }
+    // Collects all the request count for apiKey in one second and store in window
     case CollectTick(apiKey) => {
+      log.debug("gets a collect tick message for " + apiKey)
       if (queryCountWindowMap.contains(apiKey))
         queryCountWindowMap(apiKey) = (List(queryCountTickMap(apiKey)) ::: queryCountWindowMap(apiKey)).take(10)
       else
         queryCountWindowMap(apiKey) = List(queryCountTickMap(apiKey))
       queryCountTickMap(apiKey) = 0
     }
+    // Removes the apiKey from suspended list and reset the counters for the apiKey
     case RemoveSuspended(apiKey) => {
       suspendedKeysList = suspendedKeysList.take(suspendedKeysList.size - 1)
       queryCountTickMap(apiKey) = 0
