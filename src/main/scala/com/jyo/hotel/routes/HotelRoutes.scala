@@ -4,7 +4,7 @@ import akka.actor.{ ActorRef, ActorSystem }
 import akka.pattern.ask
 import akka.event.Logging
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.{ as, concat, entity, onSuccess, pathEnd, pathPrefix }
+import akka.http.scaladsl.server.Directives.{ as, concat, entity, onSuccess, pathEnd, pathPrefix, pathSuffix }
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.MethodDirectives.post
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
@@ -31,9 +31,9 @@ trait HotelRoutes extends HotelJsonSupport {
 
   //#all-routes
   lazy val hotelRoutes: Route =
-    pathPrefix("hotels") {
+    pathPrefix("v1") {
       concat(
-        pathEnd {
+        pathSuffix("hotels") {
           concat(
             post {
               entity(as[CityQuery]) { city =>

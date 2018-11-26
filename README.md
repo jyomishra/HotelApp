@@ -21,7 +21,7 @@ And then go to <http://localhost:9000> to see the running web application.
 
 ## Supported APIs
 
-#### 1. Hotel List By City Name : {{HOST}}/hotels
+#### 1. Hotel List By City Name : {{HOST}}/v1/hotels
 
 ##### Method: Post
 
@@ -85,5 +85,5 @@ And then go to <http://localhost:9000> to see the running web application.
     ]
 }
 ##### URL : 
-    http://localhost:9000/hotels
+    http://localhost:9000/v1/hotels
 
