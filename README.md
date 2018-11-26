@@ -25,6 +25,9 @@ And then go to <http://localhost:9000> to see the running web application.
 
 ##### Method: Post
 
+##### URL : 
+    http://localhost:9000/v1/hotels
+
 ##### Request: 
 {
     "cityName": "Bangkok", 
@@ -84,6 +87,4 @@ And then go to <http://localhost:9000> to see the running web application.
         }
     ]
 }
-##### URL : 
-    http://localhost:9000/v1/hotels
 
