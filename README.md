@@ -34,7 +34,7 @@ And then go to <http://localhost:9000> to see the running web application.
 
 "cityName" and "apiKey" are mandatory parameters.
 
-"sort" is optional. If provided then it can be "Asc" for ascending order and "Desc" for descending order.
+"sort" is optional and by price. If provided then it can be "Asc" for ascending order and "Desc" for descending order.
  
 ##### Response : 
 {

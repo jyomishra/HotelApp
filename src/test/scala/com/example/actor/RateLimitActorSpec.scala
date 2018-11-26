@@ -36,17 +36,7 @@ class RateLimitActorSpec extends TestKit(ActorSystem("MySpec")) with ImplicitSen
       val testProbe = TestProbe()
       val rateLimitActor = system.actorOf(RateLimitActor.props(testProbe.ref))
       val cityQuery = CityQuery("Bangkok","1",None)
-      rateLimitActor ! GetHotels(cityQuery)
-      rateLimitActor ! GetHotels(cityQuery)
-      rateLimitActor ! GetHotels(cityQuery)
-      rateLimitActor ! GetHotels(cityQuery)
-      rateLimitActor ! GetHotels(cityQuery)
-      rateLimitActor ! GetHotels(cityQuery)
-      rateLimitActor ! GetHotels(cityQuery)
-      rateLimitActor ! GetHotels(cityQuery)
-      rateLimitActor ! GetHotels(cityQuery)
-      rateLimitActor ! GetHotels(cityQuery)
-      rateLimitActor ! GetHotels(cityQuery)
+      (1 to 11).foreach(_ => {rateLimitActor ! GetHotels(cityQuery)})
       expectMsg(None)
     }
 
@@ -55,7 +45,6 @@ class RateLimitActorSpec extends TestKit(ActorSystem("MySpec")) with ImplicitSen
       val rateLimitActor = system.actorOf(RateLimitActor.props(testProbe.ref))
       val cityQuery = CityQuery("Bangkok","1",None)
       rateLimitActor ! GetHotels(cityQuery)
-
     }
   }
 }

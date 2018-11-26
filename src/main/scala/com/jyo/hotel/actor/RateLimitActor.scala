@@ -37,56 +37,74 @@ class RateLimitActor(hotelRegistryActorRef: ActorRef) extends Actor {
 
   override def receive = {
     case GetHotels(cityQuery) => {
-
-      // sliding window implementation for rate limit
-      log.debug("request received for api key : " + cityQuery.apiKey + " at actor " + self)
-      val rateLimit = getRateLimitForApiKey(cityQuery)
-
-      // checks the apiKey in suspended keys list
-      if (suspendedKeysList.contains(cityQuery.apiKey)) {
-        sender() ! None
-      } else {
-        // if window map contains the key then
-        // check all request count in last 10 sec
-        if (queryCountWindowMap.contains(cityQuery.apiKey)) {
-          if (queryCountWindowMap(cityQuery.apiKey).sum >= rateLimit || queryCountTickMap(cityQuery.apiKey) >= rateLimit
-            || queryCountWindowMap(cityQuery.apiKey).sum + queryCountTickMap(cityQuery.apiKey) >= rateLimit) {
-            log.info("Rate limit exceed. Api key suspended : " + cityQuery.apiKey)
-            suspendedKeysList ++= List(cityQuery.apiKey)
-            context.system.scheduler.scheduleOnce(5 minute, self, RemoveSuspended(cityQuery.apiKey))
-            sender() ! None
-          } else {
-            // if rate is under limit then
-            queryCountTickMap(cityQuery.apiKey) = queryCountTickMap(cityQuery.apiKey) + 1
-            hotelRegistryActorRef ! SendHotelData(cityQuery, sender())
-          }
-        } else {
-          queryCountWindowMap(cityQuery.apiKey) = List.empty[Int]
-          if (queryCountTickMap.contains(cityQuery.apiKey)) {
-            queryCountTickMap(cityQuery.apiKey) = queryCountTickMap(cityQuery.apiKey) + 1
-          } else {
-            queryCountTickMap(cityQuery.apiKey) = 1
-            context.system.scheduler.schedule(1 second, 1 second, self, CollectTick(cityQuery.apiKey))
-          }
-          hotelRegistryActorRef ! SendHotelData(cityQuery, sender())
-        }
-      }
+      checkRateLimitAndProcess(cityQuery)
     }
     // Collects all the request count for apiKey in one second and store in window
     case CollectTick(apiKey) => {
-      log.debug("gets a collect tick message for " + apiKey)
-      if (queryCountWindowMap.contains(apiKey))
-        queryCountWindowMap(apiKey) = (List(queryCountTickMap(apiKey)) ::: queryCountWindowMap(apiKey)).take(10)
-      else
-        queryCountWindowMap(apiKey) = List(queryCountTickMap(apiKey))
-      queryCountTickMap(apiKey) = 0
+      collectRequestCountInASecondForApiKey(apiKey)
     }
     // Removes the apiKey from suspended list and reset the counters for the apiKey
     case RemoveSuspended(apiKey) => {
-      suspendedKeysList = suspendedKeysList.take(suspendedKeysList.size - 1)
-      queryCountTickMap(apiKey) = 0
-      queryCountWindowMap(apiKey) = List.empty[Int]
-      log.info("Rate limit restored for Api key : " + apiKey)
+      removeApiKeyFromSuspendedListAndResetCounters(apiKey)
+    }
+  }
+
+  private def removeApiKeyFromSuspendedListAndResetCounters(apiKey: String) = {
+    suspendedKeysList = suspendedKeysList.take(suspendedKeysList.size - 1)
+    queryCountTickMap(apiKey) = 0
+    queryCountWindowMap(apiKey) = List.empty[Int]
+    log.info("Rate limit restored for Api key : " + apiKey)
+  }
+
+  private def collectRequestCountInASecondForApiKey(apiKey: String) = {
+    log.debug("gets a collect tick message for " + apiKey)
+    if (queryCountWindowMap.contains(apiKey))
+      queryCountWindowMap(apiKey) = (List(queryCountTickMap(apiKey)) ::: queryCountWindowMap(apiKey)).take(10)
+    else
+      queryCountWindowMap(apiKey) = List(queryCountTickMap(apiKey))
+    queryCountTickMap(apiKey) = 0
+  }
+
+  private def checkRateLimitAndProcess(cityQuery: CityQuery) = {
+    log.debug("request received for api key : " + cityQuery.apiKey + " at actor " + self)
+    val rateLimit = getRateLimitForApiKey(cityQuery)
+
+    // checks the apiKey in suspended keys list
+    if (suspendedKeysList.contains(cityQuery.apiKey)) {
+      sender() ! None
+    } else {
+      // if window map contains the key then
+      // check all request count in last 10 sec
+      if (queryCountWindowMap.contains(cityQuery.apiKey)) {
+        checkLimitOnSlidingWindow(cityQuery, rateLimit)
+      } else {
+        setupWindowAndTickForApiKey(cityQuery)
+      }
+    }
+  }
+
+  private def setupWindowAndTickForApiKey(cityQuery: CityQuery) = {
+    queryCountWindowMap(cityQuery.apiKey) = List.empty[Int]
+    if (queryCountTickMap.contains(cityQuery.apiKey)) {
+      queryCountTickMap(cityQuery.apiKey) = queryCountTickMap(cityQuery.apiKey) + 1
+    } else {
+      queryCountTickMap(cityQuery.apiKey) = 1
+      context.system.scheduler.schedule(1 second, 1 second, self, CollectTick(cityQuery.apiKey))
+    }
+    hotelRegistryActorRef ! SendHotelData(cityQuery, sender())
+  }
+
+  private def checkLimitOnSlidingWindow(cityQuery: CityQuery, rateLimit: Int) = {
+    if (queryCountWindowMap(cityQuery.apiKey).sum >= rateLimit || queryCountTickMap(cityQuery.apiKey) >= rateLimit
+      || queryCountWindowMap(cityQuery.apiKey).sum + queryCountTickMap(cityQuery.apiKey) >= rateLimit) {
+      log.info("Rate limit exceed. Api key suspended : " + cityQuery.apiKey)
+      suspendedKeysList ++= List(cityQuery.apiKey)
+      context.system.scheduler.scheduleOnce(5 minute, self, RemoveSuspended(cityQuery.apiKey))
+      sender() ! None
+    } else {
+      // if rate is under limit then
+      queryCountTickMap(cityQuery.apiKey) = queryCountTickMap(cityQuery.apiKey) + 1
+      hotelRegistryActorRef ! SendHotelData(cityQuery, sender())
     }
   }
 
