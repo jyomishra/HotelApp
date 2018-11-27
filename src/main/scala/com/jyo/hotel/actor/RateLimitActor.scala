@@ -1,10 +1,10 @@
 package com.jyo.hotel.actor
 
-import akka.actor.{ Actor, ActorRef, Props }
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.event.Logging
 import akka.routing.ConsistentHashingRouter.ConsistentHashable
 import com.jyo.hotel.actor.HotelRegistryActor.SendHotelData
-import com.jyo.hotel.actor.RateLimitActor.{ CollectTick, GetHotels, RemoveSuspended }
+import com.jyo.hotel.actor.RateLimitActor.{CollectTick, GetHotels, RemoveSuspended}
 import com.jyo.hotel.models.CityQuery
 import com.typesafe.config.ConfigFactory
 
@@ -23,9 +23,7 @@ object RateLimitActor {
 /*
   Rate Limit actor implements rate limit via sliding window of 10 sec
  */
-class RateLimitActor(hotelRegistryActorRef: ActorRef) extends Actor {
-
-  lazy val log = Logging(context.system, classOf[RateLimitActor])
+class RateLimitActor(hotelRegistryActorRef: ActorRef) extends Actor with ActorLogging{
 
   private val config = ConfigFactory.load()
   // sliding window of size 10

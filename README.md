@@ -24,7 +24,6 @@ And then go to <http://localhost:9000> to see the running web application.
 #### 1. Hotel List By City Name : {{HOST}}/v1/hotels
 
 ##### Method: Post
-
 ##### URL : 
     http://localhost:9000/v1/hotels
 
