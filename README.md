@@ -7,6 +7,7 @@ It has two actors:
 If request is in limit then It goes to HotelRegistryActor for completion else 429 "Too Man Request" is sent to caller.
 2. HotelRegistryActor : Search hotel by city name and respond with searched hotels for the city.
 
+RateLimitActor has ConsistentHash pool for scalability and HotelRegistryActoe has normal smallestMailBox pool for scalability.
 
 RateLimits are configurable for global and at apiKey level via application.conf
 # Running
